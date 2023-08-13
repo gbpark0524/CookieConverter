@@ -3,17 +3,23 @@
 <head>
 	<title>Cookie Saver</title>
 	<script src="popup.js" type="module"></script>
+	<style>
+		ul	{ list-style-type: none; }
+	</style>
 </head>
 <body>
 <form id="control-row">
 	<label for="input">Domain:</label>
-	<input type="text" id="input" />
+	<input type="text" id="input" disabled="disabled"/>
 	<br />
 	<label for="title">Title:</label>
 	<input type="text" id="title" value = "1"/>
 	<br />
 	<button id="go">Save Cookies</button>
 </form>
+<div id="list-Cookie">
+	<ul></ul>
+</div>
 <span id="message" hidden></span>
 </body>
 </html>

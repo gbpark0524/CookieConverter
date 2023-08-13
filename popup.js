@@ -17,6 +17,7 @@ const title = document.getElementById('title');
 	}
 
 	input.focus();
+	listSavedCookie(input.value);
 })();
 
 form.addEventListener('submit', handleFormSubmit);
@@ -32,7 +33,7 @@ async function handleFormSubmit(event) {
 		return;
 	}
 
-	let message = await deleteDomainCookies(url.hostname);
+	let message = await saveDomainCookies(url.hostname);
 	setMessage(message);
 }
 
@@ -53,7 +54,7 @@ function stringToUrl(input) {
 	return null;
 }
 
-async function deleteDomainCookies(domain) {
+async function saveDomainCookies(domain) {
 	let cookiesDeleted = 0;
 	try {
 		let cookies = await chrome.cookies.getAll({ domain });
@@ -63,7 +64,7 @@ async function deleteDomainCookies(domain) {
 		}
 
 		saveCookie(cookies);
-
+		listSavedCookie(domain);
 	} catch (error) {
 		return `Unexpected error: ${error.message}`;
 	}
@@ -73,14 +74,51 @@ async function deleteDomainCookies(domain) {
 
 function saveCookie(cookie) {
 	let key = title.value;
-	chrome.storage.local.set(
-		{ key: cookie }
-	);
+	let data = {};
+	data[key] = cookie;
+	delCookieByKey(key);
+
+	chrome.storage.local.set(data).then(() => {
+		console.log('success');
+		setMessage('success');
+	});
 }
 
-async function getCookieList(key) {
-	chrome.storage.local.get(null, function(items) {
-		var keys = Object.keys(items);
+// display saved cookie list
+async function listSavedCookie(domain) {
+	let listCookie = document.getElementById('list-Cookie');
+	let ul = listCookie.getElementsByTagName('ul')[0];
+	ul.innerHTML = '';
+
+	try {
+		const cookieList = await getSavedCookieList(domain);
+		for (const key in cookieList) {
+			let list = document.createElement('li');
+			list.textContent = key + ' = ' + cookieList[key];
+			ul.appendChild(list);
+		}
+	} catch (error) {
+		console.error('Error:', error);
+	}
+}
+
+
+async function getSavedCookieList(domain) {
+	return new Promise((resolve) => {
+		chrome.storage.local.get(null, function(items) {
+			var cookieList = {};
+			var keys = Object.keys(items);
+			for (var i = 0; i < keys.length; i++) {
+				var key = keys[i];
+				var value = items[key][0].domain;
+				console.log(key + ' = ' + value);
+
+				if (value === domain) {
+					cookieList[key] = value;
+				}
+			}
+			resolve(cookieList);
+		});
 	});
 }
 
@@ -93,6 +131,15 @@ function deleteCookie(cookie) {
 		url: cookieUrl,
 		name: cookie.name,
 		storeId: cookie.storeId
+	});
+}
+
+function delCookieByKey(key) {
+	chrome.storage.local.remove(key, function() {
+		var error = chrome.runtime.lastError;
+		if (error) {
+			console.error(error);
+		}
 	});
 }
 
