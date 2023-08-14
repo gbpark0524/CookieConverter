@@ -17,7 +17,7 @@ const title = document.getElementById('title');
 	}
 
 	input.focus();
-	listSavedCookie(input.value);
+	await listSavedCookie(input.value);
 })();
 
 form.addEventListener('submit', handleFormSubmit);
@@ -63,8 +63,8 @@ async function saveDomainCookies(domain) {
 			return 'No cookies found';
 		}
 
-		saveCookie(cookies);
-		listSavedCookie(domain);
+		await saveCookie(cookies);
+		await listSavedCookie(domain);
 	} catch (error) {
 		return `Unexpected error: ${error.message}`;
 	}
@@ -72,16 +72,20 @@ async function saveDomainCookies(domain) {
 	return `Deleted ${cookiesDeleted} cookie(s).`;
 }
 
-function saveCookie(cookie) {
+async function saveCookie(cookie) {
 	let key = title.value;
 	let data = {};
 	data[key] = cookie;
-	delCookieByKey(key);
 
-	chrome.storage.local.set(data).then(() => {
+	await delCookieByKey(key); // 이제 삭제가 완료될 때까지 기다림
+	try {
+		await chrome.storage.local.set(data);
 		console.log('success');
 		setMessage('success');
-	});
+	} catch (error) {
+		console.error(error);
+		setMessage('error');
+	}
 }
 
 // display saved cookie list
@@ -94,12 +98,26 @@ async function listSavedCookie(domain) {
 		const cookieList = await getSavedCookieList(domain);
 		for (const key in cookieList) {
 			let list = document.createElement('li');
-			list.textContent = key + ' = ' + cookieList[key];
+			list.textContent = key;
+			list.dataset.key = key;
+			list.dataset.domain = cookieList[key];
 			ul.appendChild(list);
+
+			list.addEventListener('click', function() {
+				let key = this.dataset.key;
+				let domain = this.dataset.domain;
+				clickList(key, domain);
+			});
 		}
 	} catch (error) {
 		console.error('Error:', error);
 	}
+}
+
+async function clickList(key, domain) {
+	await delCookieByDomain(domain);
+	await setCookieByKey(key);
+	await listSavedCookie(domain);
 }
 
 
@@ -111,7 +129,7 @@ async function getSavedCookieList(domain) {
 			for (var i = 0; i < keys.length; i++) {
 				var key = keys[i];
 				var value = items[key][0].domain;
-				console.log(key + ' = ' + value);
+				console.log(key);
 
 				if (value === domain) {
 					cookieList[key] = value;
@@ -123,23 +141,89 @@ async function getSavedCookieList(domain) {
 }
 
 let newVar = chrome.storage.local.get();
-function deleteCookie(cookie) {
+async function deleteCookie(cookie) {
 	const protocol = cookie.secure ? 'https:' : 'http:';
 	const cookieUrl = `${protocol}//${cookie.domain}${cookie.path}`;
 
-	return chrome.cookies.remove({
-		url: cookieUrl,
-		name: cookie.name,
-		storeId: cookie.storeId
+	return new Promise((resolve) => {
+		chrome.cookies.remove({
+			url: cookieUrl,
+			name: cookie.name,
+			storeId: cookie.storeId
+		}, function() {
+			resolve();
+		});
 	});
 }
 
-function delCookieByKey(key) {
-	chrome.storage.local.remove(key, function() {
-		var error = chrome.runtime.lastError;
-		if (error) {
-			console.error(error);
-		}
+async function delCookieByDomain(domain) {
+	const cookies = await getCookiesByDomain(domain);
+
+	for (const cookie of cookies) {
+		await deleteCookie(cookie);
+	}
+}
+
+async function getCookiesByDomain(domain) {
+	return new Promise((resolve) => {
+		chrome.cookies.getAll({ domain }, function(cookies) {
+			resolve(cookies);
+		});
+	});
+}
+
+
+
+async function setCookieByKey(key) {
+	const items = await getCookieListByKey(key);
+	const cookieList = items[key];
+
+	for (const cookie of cookieList) {
+		console.log('name : ' + cookie.name);
+		await setCookie(cookie);
+	}
+}
+
+async function getCookieListByKey(key) {
+	return new Promise((resolve) => {
+		chrome.storage.local.get(key, function(items) {
+			resolve(items);
+		});
+	});
+}
+
+async function setCookie(cookie) {
+	const protocol = cookie.secure ? 'https:' : 'http:';
+	const cookieUrl = `${protocol}//${cookie.domain}${cookie.path}`;
+
+	return new Promise((resolve) => {
+		chrome.cookies.set({
+			url: cookieUrl,
+			name: cookie.name,
+			value: cookie.value,
+			domain: cookie.domain,
+			path: cookie.path,
+			secure: cookie.secure,
+			httpOnly: cookie.httpOnly,
+			expirationDate: cookie.expirationDate,
+			storeId: cookie.storeId
+		}, function() {
+			resolve();
+		});
+	});
+}
+
+
+
+async function delCookieByKey(key) {
+	return new Promise((resolve) => {
+		chrome.storage.local.remove(key, function() {
+			var error = chrome.runtime.lastError;
+			if (error) {
+				console.error(error);
+			}
+			resolve(); // 삭제가 완료되면 resolve 호출
+		});
 	});
 }
 
