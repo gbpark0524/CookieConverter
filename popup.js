@@ -1,5 +1,5 @@
 const form = document.getElementById('control-row');
-const input = document.getElementById('input');
+const currUrl = document.getElementById('currUrl');
 const message = document.getElementById('message');
 const title = document.getElementById('title');
 
@@ -10,14 +10,14 @@ const title = document.getElementById('title');
 	if (tab?.url) {
 		try {
 			let url = new URL(tab.url);
-			input.value = url.hostname;
+			currUrl.value = url.origin;
 		} catch {
 			// ignore
 		}
 	}
 
-	input.focus();
-	await listSavedCookie(input.value);
+	currUrl.focus();
+	await listSavedCookie(currUrl.value);
 })();
 
 form.addEventListener('submit', handleFormSubmit);
@@ -27,14 +27,19 @@ async function handleFormSubmit(event) {
 
 	clearMessage();
 
-	let url = stringToUrl(input.value);
+	if (!title.value) {
+		setMessage('Please enter a title');
+		return;
+	}
+
+	let url = stringToUrl(currUrl.value);
 	if (!url) {
 		setMessage('Invalid URL');
 		return;
 	}
 
-	let message = await saveDomainCookies(url.hostname);
-	setMessage(message);
+	let message = await saveDomainCookies(url.origin);
+	if (!!message) setMessage(message);
 }
 
 function stringToUrl(input) {
@@ -54,30 +59,32 @@ function stringToUrl(input) {
 	return null;
 }
 
-async function saveDomainCookies(domain) {
-	let cookiesDeleted = 0;
+async function saveDomainCookies(url) {
 	try {
-		let cookies = await chrome.cookies.getAll({ domain });
-
-		if (cookies.length === 0) {
-			return 'No cookies found';
-		}
-
-		await saveCookie(cookies);
-		await listSavedCookie(domain);
+		const cookies = await getCookies(url);
+		await saveCookie(url, cookies);
+		listSavedCookie(url);
 	} catch (error) {
 		return `Unexpected error: ${error.message}`;
 	}
-
-	return `Deleted ${cookiesDeleted} cookie(s).`;
 }
 
-async function saveCookie(cookie) {
+async function getCookies(url) {
+return new Promise((resolve) => {
+		chrome.cookies.getAll({url:url}, function(cookies) {
+			resolve(cookies);
+		});
+	});
+}
+
+async function saveCookie(url, cookie) {
+	if (!cookie.length) return;
 	let key = title.value;
 	let data = {};
-	data[key] = cookie;
+	let urlData = [url];
+	data[key] = urlData.concat(cookie);
 
-	await delCookieByKey(key); // 이제 삭제가 완료될 때까지 기다림
+	await delDataByKey(key); // 이제 삭제가 완료될 때까지 기다림
 	try {
 		await chrome.storage.local.set(data);
 		console.log('success');
@@ -89,24 +96,22 @@ async function saveCookie(cookie) {
 }
 
 // display saved cookie list
-async function listSavedCookie(domain) {
+async function listSavedCookie(url) {
 	let listCookie = document.getElementById('list-Cookie');
 	let ul = listCookie.getElementsByTagName('ul')[0];
 	ul.innerHTML = '';
 
 	try {
-		const cookieList = await getSavedCookieList(domain);
-		for (const key in cookieList) {
+		const keyList = await getSavedCookieList(url);
+		for (const key in keyList) {
 			let list = document.createElement('li');
-			list.textContent = key;
-			list.dataset.key = key;
-			list.dataset.domain = cookieList[key];
+			list.textContent = keyList[key];
+			list.dataset.key = keyList[key];
 			ul.appendChild(list);
 
 			list.addEventListener('click', function() {
 				let key = this.dataset.key;
-				let domain = this.dataset.domain;
-				clickList(key, domain);
+				clickList(key);
 			});
 		}
 	} catch (error) {
@@ -114,33 +119,31 @@ async function listSavedCookie(domain) {
 	}
 }
 
-async function clickList(key, domain) {
-	await delCookieByDomain(domain);
+async function clickList(key) {
+	await delCookieByUrl(currUrl.value);
 	await setCookieByKey(key);
-	await listSavedCookie(domain);
+	await listSavedCookie(currUrl.value);
 }
 
 
-async function getSavedCookieList(domain) {
+async function getSavedCookieList(url) {
 	return new Promise((resolve) => {
 		chrome.storage.local.get(null, function(items) {
-			var cookieList = {};
+			var keyList = [];
 			var keys = Object.keys(items);
 			for (var i = 0; i < keys.length; i++) {
 				var key = keys[i];
-				var value = items[key][0].domain;
-				console.log(key);
+				var value = items[key];
 
-				if (value === domain) {
-					cookieList[key] = value;
+				if (url === value[0]) {
+					keyList.push(key);
 				}
 			}
-			resolve(cookieList);
+			resolve(keyList);
 		});
 	});
 }
 
-let newVar = chrome.storage.local.get();
 async function deleteCookie(cookie) {
 	const protocol = cookie.secure ? 'https:' : 'http:';
 	const cookieUrl = `${protocol}//${cookie.domain}${cookie.path}`;
@@ -156,31 +159,20 @@ async function deleteCookie(cookie) {
 	});
 }
 
-async function delCookieByDomain(domain) {
-	const cookies = await getCookiesByDomain(domain);
+async function delCookieByUrl(url) {
+	const cookies = await getCookies(url);
 
 	for (const cookie of cookies) {
 		await deleteCookie(cookie);
 	}
 }
 
-async function getCookiesByDomain(domain) {
-	return new Promise((resolve) => {
-		chrome.cookies.getAll({ domain }, function(cookies) {
-			resolve(cookies);
-		});
-	});
-}
-
-
-
 async function setCookieByKey(key) {
 	const items = await getCookieListByKey(key);
-	const cookieList = items[key];
+	const cookieList = items[key].slice(1);
 
 	for (const cookie of cookieList) {
-		console.log('name : ' + cookie.name);
-		await setCookie(cookie);
+		setCookie(cookie);
 	}
 }
 
@@ -193,12 +185,11 @@ async function getCookieListByKey(key) {
 }
 
 async function setCookie(cookie) {
-	const protocol = cookie.secure ? 'https:' : 'http:';
-	const cookieUrl = `${protocol}//${cookie.domain}${cookie.path}`;
-
 	return new Promise((resolve) => {
+		console.log(cookie.name);
+		console.log(cookie.expirationDate);
 		chrome.cookies.set({
-			url: cookieUrl,
+			url: currUrl.value,
 			name: cookie.name,
 			value: cookie.value,
 			domain: cookie.domain,
@@ -215,7 +206,7 @@ async function setCookie(cookie) {
 
 
 
-async function delCookieByKey(key) {
+async function delDataByKey(key) {
 	return new Promise((resolve) => {
 		chrome.storage.local.remove(key, function() {
 			var error = chrome.runtime.lastError;
@@ -225,6 +216,17 @@ async function delCookieByKey(key) {
 			resolve(); // 삭제가 완료되면 resolve 호출
 		});
 	});
+}
+
+function getAllLevelDomains(domain) {
+	const domainParts = domain.split(".");
+	const length = domainParts.length;
+	let domains = [];
+	for (let i = 2; i <= length; i++) {
+		domains.push(domainParts.slice(-i).join("."));
+	}
+
+	return domains
 }
 
 function setMessage(str) {
