@@ -7,15 +7,13 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "colorCookie1.png",
-      "32": "colorCookie1.png",
+      "16": "icons8-cookie-64.png",
       "48": "colorCookie1.png",
       "128": "colorCookie1.png"
     }
   },
   "icons": {
-    "16": "colorCookie1.png",
-    "32": "colorCookie1.png",
+    "16": "icons8-cookie-64.png",
     "48": "colorCookie1.png",
     "128": "colorCookie1.png"
   }
