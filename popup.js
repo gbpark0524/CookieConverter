@@ -171,8 +171,10 @@ async function setCookieByKey(key) {
 	const items = await getCookieListByKey(key);
 	const cookieList = items[key].slice(1);
 
+	const data = await getAgeOption();
+
 	for (const cookie of cookieList) {
-		setCookie(cookie);
+		setCookie(cookie, data.ageYn ? data.age : 0);
 	}
 }
 
@@ -184,10 +186,11 @@ async function getCookieListByKey(key) {
 	});
 }
 
-async function setCookie(cookie) {
+async function setCookie(cookie, expirationDate) {
 	return new Promise((resolve) => {
 		console.log(cookie.name);
-		console.log(cookie.expirationDate);
+		const date = isCookieExpired(cookie.expirationDate) ? Math.floor(Date.now() / 1000) + expirationDate : cookie.expirationDate;
+		console.log(date);
 		chrome.cookies.set({
 			url: currUrl.value,
 			name: cookie.name,
@@ -196,7 +199,7 @@ async function setCookie(cookie) {
 			path: cookie.path,
 			secure: cookie.secure,
 			httpOnly: cookie.httpOnly,
-			expirationDate: cookie.expirationDate,
+			expirationDate: date,
 			storeId: cookie.storeId
 		}, function() {
 			resolve();
@@ -218,15 +221,23 @@ async function delDataByKey(key) {
 	});
 }
 
-function getAllLevelDomains(domain) {
-	const domainParts = domain.split(".");
-	const length = domainParts.length;
-	let domains = [];
-	for (let i = 2; i <= length; i++) {
-		domains.push(domainParts.slice(-i).join("."));
-	}
 
-	return domains
+async function getAgeOption() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.sync.get(['age', 'ageYn'], function(data) {
+			if (chrome.runtime.lastError) {
+				reject(new Error(chrome.runtime.lastError));
+			} else {
+				resolve(data);
+			}
+		});
+	});
+}
+
+function isCookieExpired(expirationDate) {
+	const currentTimestamp = Math.floor(Date.now() / 1000);
+	if (!expirationDate) return false;
+	return expirationDate <= currentTimestamp;
 }
 
 function setMessage(str) {

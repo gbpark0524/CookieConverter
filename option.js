@@ -43,7 +43,7 @@ async function saveEx() {
         return;
     }
 
-    const extendDuration = days * 24 * 60 * 60 * 1000 + hours * 60 * 60 * 1000;
+    const extendDuration = days * 24 * 60 * 60 + hours * 60 * 60;
     const ageYn = document.getElementById('ageYn').checked;
     const data = {age: extendDuration, ageYn: ageYn};
 
@@ -65,8 +65,8 @@ function callOptions() {
         } else {
             const age = data.age;
             const ageYn = data.ageYn;
-            const days = age / (24 * 60 * 60 * 1000);
-            const hours = (age % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
+            const days = Math.floor(age / (24 * 60 * 60));
+            const hours = (age % (24 * 60 * 60))/ (60 * 60);
 
             document.getElementById('days').value = days;
             document.getElementById('hours').value = hours;
