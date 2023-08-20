@@ -38,6 +38,12 @@ async function handleFormSubmit(event) {
 		return;
 	}
 
+	const keyList = await getSavedCookieList();
+	if (keyList.includes(title.value)) {
+		setMessage('The title already exists');
+		return;
+	}
+
 	let message = await saveDomainCookies(url.origin);
 	if (!!message) setMessage(message);
 }
@@ -84,7 +90,6 @@ async function saveCookie(url, cookie) {
 	let urlData = [url];
 	data[key] = urlData.concat(cookie);
 
-	await delDataByKey(key); // 이제 삭제가 완료될 때까지 기다림
 	try {
 		await chrome.storage.local.set(data);
 		console.log('success');
@@ -131,6 +136,9 @@ async function getSavedCookieList(url) {
 		chrome.storage.local.get(null, function(items) {
 			var keyList = [];
 			var keys = Object.keys(items);
+
+			if (typeof url === 'undefined') resolve(keys);
+
 			for (var i = 0; i < keys.length; i++) {
 				var key = keys[i];
 				var value = items[key];
