@@ -113,10 +113,19 @@ async function listSavedCookie(url) {
 			list.textContent = keyList[key];
 			list.dataset.key = keyList[key];
 			ul.appendChild(list);
+			let delIcon = document.createElement('div');
+			delIcon.classList.add('delete-icon');
+			list.appendChild(delIcon);
 
 			list.addEventListener('click', function() {
 				let key = this.dataset.key;
 				clickList(key);
+			});
+
+			delIcon.addEventListener('click', function() {
+				let key = this.parentNode.dataset.key;
+				delDataByKey(key);
+				listSavedCookie(url);
 			});
 		}
 	} catch (error) {
