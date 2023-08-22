@@ -49,19 +49,16 @@ async function handleFormSubmit(event) {
 }
 
 function stringToUrl(input) {
-	// Start with treating the provided value as a URL
 	try {
 		return new URL(input);
 	} catch {
 		// ignore
 	}
-	// If that fails, try assuming the provided input is an HTTP host
 	try {
 		return new URL('http://' + input);
 	} catch {
 		// ignore
 	}
-	// If that fails ¯\_(ツ)_/¯
 	return null;
 }
 
@@ -100,7 +97,6 @@ async function saveCookie(url, cookie) {
 	}
 }
 
-// display saved cookie list
 async function listSavedCookie(url) {
 	let listCookie = document.getElementById('list-Cookie');
 	let ul = listCookie.getElementsByTagName('ul')[0];
@@ -233,7 +229,7 @@ async function delDataByKey(key) {
 			if (error) {
 				console.error(error);
 			}
-			resolve(); // 삭제가 완료되면 resolve 호출
+			resolve();
 		});
 	});
 }

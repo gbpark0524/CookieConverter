@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     callOptions();
+    listSavedCookie();
 });
 
 async function saveEx() {
@@ -86,4 +87,51 @@ async function showMsg(massage) {
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function listSavedCookie() {
+    let listCookie = document.getElementById('list-Cookie');
+    let ul = listCookie.getElementsByTagName('ul')[0];
+    ul.innerHTML = '';
+
+    try {
+        getList().then((items) => {
+            for (const key in items) {
+                let list = document.createElement('li');
+                const item = items[key];
+                list.textContent = item[0] + ' - ' + key;
+                list.dataset.key = key;
+                ul.appendChild(list);
+                let delIcon = document.createElement('div');
+                delIcon.classList.add('delete-icon');
+                list.appendChild(delIcon);
+                delIcon.addEventListener('click', function() {
+                    let key = this.parentNode.dataset.key;
+                    delDataByKey(key).then(() => listSavedCookie());
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function getList() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(null, function(items) {
+            resolve(items);
+        });
+    });
+}
+
+async function delDataByKey(key) {
+    return new Promise((resolve) => {
+        chrome.storage.local.remove(key, function() {
+            var error = chrome.runtime.lastError;
+            if (error) {
+                console.error(error);
+            }
+            resolve();
+        });
+    });
 }
