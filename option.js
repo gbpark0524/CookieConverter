@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     callOptions();
     listSavedCookie();
+
+    document.querySelector('.close-btn').addEventListener('click', function() {
+        document.getElementById('titleModal').style.display = 'none';
+    });
 });
 
 async function saveEx() {
@@ -110,6 +114,39 @@ function listSavedCookie() {
                     delDataByKey(key).then(() => listSavedCookie());
                 });
             }
+
+            const keys = Object.keys(items);
+
+            document.querySelectorAll("#list-Cookie > ul > li").forEach(function(e) {
+                e.addEventListener("click", function() {
+                    document.getElementById('titleModal').style.display = 'block';
+                    document.getElementById('titleInput').value = e.dataset.key;
+                    document.getElementById('titleInput').dataset.key = e.dataset.key;
+                });
+            });
+
+            const old_element = document.getElementById('saveTitleBtn');
+            const new_element = old_element.cloneNode(true);
+            old_element.parentNode.replaceChild(new_element, old_element);
+
+            document.getElementById('saveTitleBtn').addEventListener('click', function() {
+                const title = document.getElementById('titleInput').value;
+                if (keys.includes(title)) {
+                    alert('Already exists.');
+                    return;
+                }
+
+                const key = document.getElementById('titleInput').dataset.key;
+
+                renameKey(key, title, function(result) {
+                    if (result) {
+                        listSavedCookie();
+                        document.getElementById('titleModal').style.display = 'none';
+                    } else {
+                        alert('Failed to save.');
+                    }
+                });
+            });
         });
     } catch (error) {
         console.error('Error:', error);
@@ -132,6 +169,41 @@ async function delDataByKey(key) {
                 console.error(error);
             }
             resolve();
+        });
+    });
+}
+
+function renameKey(oldKey, newKey, callback) {
+    // Retrieve the value from the old key
+    chrome.storage.local.get(oldKey, function(result) {
+        if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError);
+            callback(false);
+            return;
+        }
+
+        let value = result[oldKey];
+
+        // Save the value under the new key
+        let obj = {};
+        obj[newKey] = value;
+        chrome.storage.local.set(obj, function() {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+                callback(false);
+                return;
+            }
+
+            // Remove the old key
+            chrome.storage.local.remove(oldKey, function() {
+                if (chrome.runtime.lastError) {
+                    console.error(chrome.runtime.lastError);
+                    callback(false);
+                    return;
+                }
+
+                callback(true);
+            });
         });
     });
 }
