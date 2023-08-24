@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Cookie Saver</title>
 	<script src="popup.js" type="module"></script>
 	<link rel="stylesheet" href="common.css">
 </head>
 <body>
 <form id="control-row">
-	<label for="currUrl">url:</label>
+	<label for="currUrl">URL:</label>
 	<input type="text" id="currUrl" disabled="disabled"/>
-	<br />
 	<label for="title">Title:</label>
 	<input type="text" id="title" value = ""/>
-	<br />
+	<hr>
 	<button id="go">Save Cookies</button>
 </form>
 <div id="list-Cookie">

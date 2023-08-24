@@ -16,7 +16,7 @@ li:hover {
     cursor: pointer;
 }
 
-.delete-icon {
+.delete-icon, .close-btn {
     -webkit-mask: url(del.svg) no-repeat center;
     float: right;
     height: 12px;
@@ -24,8 +24,9 @@ li:hover {
     background-color: #c7c2c2;
 }
 
-.delete-icon:hover {
+.delete-icon:hover, .close-btn:hover {
     background-color: black;
+    cursor: pointer;
 }
 
 .modal {
@@ -49,13 +50,25 @@ li:hover {
     width: 300px;
 }
 
-.close-btn {
-    cursor: pointer;
-    float: right;
-    font-size: 24px;
-    font-weight: bold;
+header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: black;
+    padding: 10px 20px;
+    color: white;
 }
 
-.close-btn:hover {
-    color: red;
+h1 {
+    margin: 0;
+}
+
+a {
+    margin: 2px;
+    color: white; /* Color of the text links if you add them */
+    text-decoration: none; /* Removes the underline from links */
+}
+
+a:hover {
+    opacity: 0.7; /* Makes the link slightly transparent when hovering */
 }
