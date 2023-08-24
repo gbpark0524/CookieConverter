@@ -118,7 +118,8 @@ async function listSavedCookie(url) {
 				clickList(key);
 			});
 
-			delIcon.addEventListener('click', function() {
+			delIcon.addEventListener('click', function(event) {
+				event.stopPropagation();
 				const key = this.parentNode.dataset.key;
 				delDataByKey(key);
 				listSavedCookie(url);

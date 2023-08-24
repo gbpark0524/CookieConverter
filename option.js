@@ -109,7 +109,8 @@ function listSavedCookie() {
                 const delIcon = document.createElement('div');
                 delIcon.classList.add('delete-icon');
                 list.appendChild(delIcon);
-                delIcon.addEventListener('click', function() {
+                delIcon.addEventListener('click', function(event) {
+                    event.stopPropagation();
                     const key = this.parentNode.dataset.key;
                     delDataByKey(key).then(() => listSavedCookie());
                 });
