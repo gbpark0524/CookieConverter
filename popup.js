@@ -5,11 +5,11 @@ const title = document.getElementById('title');
 
 // The async IIFE is necessary because Chrome <89 does not support top level await.
 (async function initPopupWindow() {
-	let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
 	if (tab?.url) {
 		try {
-			let url = new URL(tab.url);
+			const url = new URL(tab.url);
 			currUrl.value = url.origin;
 		} catch {
 			// ignore
@@ -32,7 +32,7 @@ async function handleFormSubmit(event) {
 		return;
 	}
 
-	let url = stringToUrl(currUrl.value);
+	const url = stringToUrl(currUrl.value);
 	if (!url) {
 		setMessage('Invalid URL');
 		return;
@@ -44,7 +44,7 @@ async function handleFormSubmit(event) {
 		return;
 	}
 
-	let message = await saveDomainCookies(url.origin);
+	const message = await saveDomainCookies(url.origin);
 	if (!!message) setMessage(message);
 }
 
@@ -82,9 +82,9 @@ return new Promise((resolve) => {
 
 async function saveCookie(url, cookie) {
 	if (!cookie.length) return;
-	let key = title.value;
-	let data = {};
-	let urlData = [url];
+	const key = title.value;
+	const data = {};
+	const urlData = [url];
 	data[key] = urlData.concat(cookie);
 
 	try {
@@ -98,28 +98,28 @@ async function saveCookie(url, cookie) {
 }
 
 async function listSavedCookie(url) {
-	let listCookie = document.getElementById('list-Cookie');
-	let ul = listCookie.getElementsByTagName('ul')[0];
+	const listCookie = document.getElementById('list-Cookie');
+	const ul = listCookie.getElementsByTagName('ul')[0];
 	ul.innerHTML = '';
 
 	try {
 		const keyList = await getSavedCookieList(url);
 		for (const key in keyList) {
-			let list = document.createElement('li');
+			const list = document.createElement('li');
 			list.textContent = keyList[key];
 			list.dataset.key = keyList[key];
 			ul.appendChild(list);
-			let delIcon = document.createElement('div');
+			const delIcon = document.createElement('div');
 			delIcon.classList.add('delete-icon');
 			list.appendChild(delIcon);
 
 			list.addEventListener('click', function() {
-				let key = this.dataset.key;
+				const key = this.dataset.key;
 				clickList(key);
 			});
 
 			delIcon.addEventListener('click', function() {
-				let key = this.parentNode.dataset.key;
+				const key = this.parentNode.dataset.key;
 				delDataByKey(key);
 				listSavedCookie(url);
 			});

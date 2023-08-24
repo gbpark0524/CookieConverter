@@ -94,23 +94,23 @@ function sleep(ms) {
 }
 
 function listSavedCookie() {
-    let listCookie = document.getElementById('list-Cookie');
-    let ul = listCookie.getElementsByTagName('ul')[0];
+    const listCookie = document.getElementById('list-Cookie');
+    const ul = listCookie.getElementsByTagName('ul')[0];
     ul.innerHTML = '';
 
     try {
         getList().then((items) => {
             for (const key in items) {
-                let list = document.createElement('li');
+                const list = document.createElement('li');
                 const item = items[key];
                 list.textContent = item[0] + ' - ' + key;
                 list.dataset.key = key;
                 ul.appendChild(list);
-                let delIcon = document.createElement('div');
+                const delIcon = document.createElement('div');
                 delIcon.classList.add('delete-icon');
                 list.appendChild(delIcon);
                 delIcon.addEventListener('click', function() {
-                    let key = this.parentNode.dataset.key;
+                    const key = this.parentNode.dataset.key;
                     delDataByKey(key).then(() => listSavedCookie());
                 });
             }
@@ -182,10 +182,10 @@ function renameKey(oldKey, newKey, callback) {
             return;
         }
 
-        let value = result[oldKey];
+        const value = result[oldKey];
 
         // Save the value under the new key
-        let obj = {};
+        const obj = {};
         obj[newKey] = value;
         chrome.storage.local.set(obj, function() {
             if (chrome.runtime.lastError) {
