@@ -186,9 +186,8 @@ async function setCookieByKey(key) {
 
 	const data = await getAgeOption();
 
-	for (const cookie of cookieList) {
-		setCookie(cookie, data.ageYn ? data.age : 0);
-	}
+	const promises = cookieList.map(cookie => setCookie(cookie, data.ageYn ? data.age : -1));
+	await Promise.all(promises);
 }
 
 async function getCookieListByKey(key) {
@@ -201,20 +200,23 @@ async function getCookieListByKey(key) {
 
 async function setCookie(cookie, expirationDate) {
 	return new Promise((resolve) => {
-		console.log(cookie.name);
-		const date = isCookieExpired(cookie.expirationDate) ? Math.floor(Date.now() / 1000) + expirationDate : cookie.expirationDate;
-		console.log(date);
-		chrome.cookies.set({
+		const date = expirationDate > -1 && isCookieExpired(cookie.expirationDate) ? Math.floor(Date.now() / 1000) + expirationDate : cookie.expirationDate;
+		const data = {
 			url: currUrl.value,
 			name: cookie.name,
 			value: cookie.value,
-			domain: cookie.domain,
 			path: cookie.path,
 			secure: cookie.secure,
 			httpOnly: cookie.httpOnly,
 			expirationDate: date,
 			storeId: cookie.storeId
-		}, function() {
+		};
+
+		if (cookie.name.indexOf('__Host-') !== 0) {
+			data['domain'] = cookie.domain;
+		}
+
+		chrome.cookies.set(data, function() {
 			resolve();
 		});
 	});
