@@ -213,7 +213,7 @@ async function setCookie(cookie, expirationDate) {
 			storeId: cookie.storeId
 		};
 
-		if (cookie.name.indexOf('__Host-') !== 0) {
+		if (cookie.name.startsWith('__Host-') || cookie.name.startsWith('.')) {
 			data['domain'] = cookie.domain;
 		}
 
