@@ -89,11 +89,11 @@ async function saveCookie(url, cookie) {
 
 	try {
 		await chrome.storage.local.set(data);
-		console.log('success');
-		setMessage('success');
+		console.log('success - saveCookie');
+		setMessage('success - saveCookie');
 	} catch (error) {
 		console.error(error);
-		setMessage('error');
+		setMessage('error - saveCookie');
 	}
 }
 
@@ -189,6 +189,9 @@ async function setCookieByKey(key) {
 
 	const promises = cookieList.map(cookie => setCookie(cookie, data.ageYn ? data.age : -1));
 	await Promise.all(promises);
+
+	console.log('success - setCookieByKey');
+	setMessage('success - setCookie');
 }
 
 async function getCookieListByKey(key) {
