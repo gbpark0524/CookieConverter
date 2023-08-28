@@ -100,7 +100,7 @@ async function saveCookie(url, cookie) {
 async function listSavedCookie(url) {
 	const listCookie = document.getElementById('list-Cookie');
 	const ul = listCookie.getElementsByTagName('ul')[0];
-	ul.innerHTML = '';
+	const newUl = document.createElement('ul');
 
 	try {
 		const keyList = await getSavedCookieList(url);
@@ -108,7 +108,7 @@ async function listSavedCookie(url) {
 			const list = document.createElement('li');
 			list.textContent = keyList[key];
 			list.dataset.key = keyList[key];
-			ul.appendChild(list);
+			newUl.appendChild(list);
 			const delIcon = document.createElement('div');
 			delIcon.classList.add('delete-icon');
 			list.appendChild(delIcon);
@@ -128,6 +128,8 @@ async function listSavedCookie(url) {
 	} catch (error) {
 		console.error('Error:', error);
 	}
+
+	listCookie.replaceChild(newUl, ul);
 }
 
 async function clickList(key) {
